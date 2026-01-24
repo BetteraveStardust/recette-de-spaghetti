@@ -1,5 +1,8 @@
 https://BetteraveStardust.github.io/recette-de-spaghetti/
+
+
 Documentation :
+
 SheetJS (xlsx.js)
 - Fonction : Lire et écrire des fichiers Excel
 - Documentation : https://docs.sheetjs.com/
@@ -13,5 +16,7 @@ Vis.js Network
 - new vis.Network() créer un graph; nodes noeud du graph; edges liens entre les noeuds; network.on('click',...) gère les actions sur les nodes; physics : option de physique/eleastique
 
 https://visjs.github.io/vis-network/examples/ => basic usage, click events et styling 
+
 https://d3js.org/ (?)
+
 https://js.cytoscape.org/ pour réseaux complexes 
