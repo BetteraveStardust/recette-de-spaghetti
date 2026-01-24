@@ -845,4 +845,49 @@
             document.querySelector('.info-panel').innerHTML = `
                 <div class="empty-state">
                     <div style="font-size: 4em;">👆</div>
-                    <p>Cli
+                    <p>Cliquez sur un élément pour voir ses informations</p>
+                </div>
+            `;
+        }
+
+        function updateBreadcrumb() {
+            let breadcrumb = '<span onclick="resetView()">🏠 Accueil</span>';
+            
+            if (currentSection) {
+                breadcrumb += ' > <span onclick="showPersonsInSection(\'' + currentSection + '\')">' + currentSection + '</span>';
+            }
+            
+            if (currentPerson) {
+                breadcrumb += ' > <span onclick="showArticlesOfPerson(' + currentPerson.ID + ')">' + currentPerson.Nom + '</span>';
+            }
+            
+            document.getElementById('breadcrumb').innerHTML = breadcrumb;
+        }
+
+        function resetView() {
+            currentSection = null;
+            currentPerson = null;
+            currentArticle = null;
+            
+            if (personnesData.length > 0) {
+                showSections();
+            } else {
+                clearInfoPanel();
+                if (network) {
+                    updateNetwork([], []);
+                }
+            }
+        }
+
+        // ========================================
+        // INITIALISATION AU CHARGEMENT DE LA PAGE
+        // ========================================
+        
+        // Charger automatiquement les données au démarrage
+        window.addEventListener('load', function() {
+            initializeNetwork();
+            loadDefaultData();
+        });
+    </script>
+</body>
+</html>
