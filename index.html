@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organigramme Dynamique</title>
+    <!-- Bibliothèque pour lire les fichiers Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Bibliothèque pour créer des graphes interactifs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .upload-section {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .upload-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .status-indicator.loading {
+            background: #fff3bf;
+            color: #856404;
+        }
+
+        .status-indicator.success {
+            background: #d3f9d8;
+            color: #2b8a3e;
+        }
+
+        .status-indicator.error {
+            background: #ffe3e3;
+            color: #c92a2a;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .file-name {
+            color: #495057;
+            font-style: italic;
+        }
+
+        .main-content {
+            display: flex;
+            height: calc(100vh - 300px);
+            min-height: 600px;
+        }
+
+        #network {
+            flex: 1;
+            border-right: 2px solid #e9ecef;
+            position: relative;
+        }
+
+        .info-panel {
+            width: 400px;
+            padding: 30px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .info-panel h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .info-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .info-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .info-item {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .info-item strong {
+            color: #667eea;
+        }
+
+        .relation-item {
+            background: #f1f3f5;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .relation-photo {
+            width: 100%;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        .article-item {
+            background: #e7f5ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .article-item:hover {
+            transform: translateX(5px);
+            background: #d0ebff;
+        }
+
+        .debunk-item {
+            background: #fff3bf;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            border-left: 4px solid #ffd43b;
+        }
+
+        .person-photo {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 20px;
+            border: 4px solid #667eea;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #868e96;
+        }
+
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .breadcrumb {
+            padding: 15px 30px;
+            background: #e9ecef;
+            font-size: 0.9em;
+            color: #495057;
+        }
+
+        .breadcrumb span {
+            cursor: pointer;
+            color: #667eea;
+        }
+
+        .breadcrumb span:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Organigramme Dynamique</h1>
+            <p>Explorez les relations et connections de manière interactive</p>
+        </div>
+
+        <div class="upload-section">
+            <div class="status-indicator" id="statusIndicator">
+                <div class="spinner"></div>
+                <span>Chargement des données...</span>
+            </div>
+            <div class="upload-box">
+                <div class="file-input-wrapper">
+                    <input type="file" id="excelFile" accept=".xlsx,.xls" />
+                    <label for="excelFile" class="file-input-label">
+                        🔄 Charger un autre fichier
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="breadcrumb" id="breadcrumb">
+            <span onclick="resetView()">🏠 Accueil</span>
+        </div>
+
+        <div class="main-content">
+            <div id="network"></div>
+            <div class="info-panel">
+                <div class="empty-state">
+                    <div style="font-size: 4em;">👆</div>
+                    <p>Cliquez sur un élément pour voir ses informations</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // VARIABLES GLOBALES
+        // ========================================
+        
+        // Stockage des données Excel
+        let personnesData = [];
+        let articlesData = [];
+        let relationsData = [];
+        let debunksData = [];
+        
+        // Variables pour le réseau (graphe)
+        let network = null;
+        let nodes = null;
+        let edges = null;
+        
+        // Navigation (pour savoir où on est dans l'arborescence)
+        let currentView = 'sections'; // 'sections', 'persons', 'articles'
+        let currentSection = null;
+        let currentPerson = null;
+        let currentArticle = null;
+
+        // ========================================
+        // CHARGEMENT AUTOMATIQUE AU DÉMARRAGE
+        // ========================================
+        
+        // Cette fonction charge automatiquement le fichier data.xlsx
+        // IMPORTANT : Le fichier data.xlsx doit être dans le même dossier que index.html
+        async function loadDefaultData() {
+            updateStatus('loading', 'Chargement des données...');
+            
+            try {
+                // Charger le fichier data.xlsx depuis le serveur
+                const response = await fetch('data.xlsx');
+                
+                if (!response.ok) {
+                    throw new Error('Fichier data.xlsx introuvable. Assurez-vous qu\'il est dans le même dossier.');
+                }
+                
+                // Convertir la réponse en ArrayBuffer
+                const arrayBuffer = await response.arrayBuffer();
+                
+                // Traiter le fichier Excel
+                processExcelData(arrayBuffer);
+                
+                updateStatus('success', '✓ Données chargées avec succès');
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                updateStatus('error', '✗ Erreur: ' + error.message);
+            }
+        }
+
+        // ========================================
+        // MISE À JOUR DE L'INDICATEUR DE STATUT
+        // ========================================
+        
+        function updateStatus(type, message) {
+            const indicator = document.getElementById('statusIndicator');
+            indicator.className = 'status-indicator ' + type;
+            
+            if (type === 'loading') {
+                indicator.innerHTML = '<div class="spinner"></div><span>' + message + '</span>';
+            } else {
+                indicator.innerHTML = '<span>' + message + '</span>';
+            }
+        }
+
+        // ========================================
+        // CHARGEMENT MANUEL D'UN FICHIER
+        // ========================================
+        
+        document.getElementById('excelFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            updateStatus('loading', 'Chargement de ' + file.name + '...');
+            
+            // Créer un lecteur de fichier
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    processExcelData(e.target.result);
+                    updateStatus('success', '✓ ' + file.name + ' chargé avec succès');
+                } catch (error) {
+                    updateStatus('error', '✗ Erreur: ' + error.message);
+                    console.error(error);
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        });
+
+        // ========================================
+        // TRAITEMENT DES DONNÉES EXCEL
+        // ========================================
+        
+        function processExcelData(arrayBuffer) {
+            // Lire le fichier Excel
+            const data = new Uint8Array(arrayBuffer);
+            const workbook = XLSX.read(data, {type: 'array'});
+            
+            // Extraire les données de chaque feuille
+            // La fonction XLSX.utils.sheet_to_json convertit une feuille Excel en tableau d'objets JavaScript
+            personnesData = XLSX.utils.sheet_to_json(workbook.Sheets['Personnes'] || workbook.Sheets[workbook.SheetNames[0]] || {});
+            articlesData = XLSX.utils.sheet_to_json(workbook.Sheets['Articles'] || {});
+            relationsData = XLSX.utils.sheet_to_json(workbook.Sheets['Relations'] || {});
+            debunksData = XLSX.utils.sheet_to_json(workbook.Sheets['Debunks'] || {});
+            
+            console.log('Données chargées:', {
+                personnes: personnesData.length,
+                articles: articlesData.length,
+                relations: relationsData.length,
+                debunks: debunksData.length
+            });
+            
+            // Initialiser l'affichage
+            initializeNetwork();
+            showSections();
+        }
+
+        // ========================================
+        // INITIALISATION DU RÉSEAU (GRAPHE)
+        // ========================================
+        
+        function initializeNetwork() {
+            const container = document.getElementById('network');
+            
+            // Configuration des options du réseau
+            const options = {
+                nodes: {
+                    shape: 'dot',
+                    size: 25,
+                    font: {
+                        size: 16,
+                        color: '#333'
+                    },
+                    borderWidth: 3,
+                    shadow: true
+                },
+                edges: {
+                    width: 2,
+                    shadow: true,
+                    smooth: {
+                        type: 'continuous'
+                    }
+                },
+                physics: {
+                    enabled: true,
+                    stabilization: {
+                        iterations: 100
+                    },
+                    barnesHut: {
+                        gravitationalConstant: -2000,
+                        springLength: 150,
+                        springConstant: 0.04
+                    }
+                },
+                interaction: {
+                    hover: true,
+                    tooltipDelay: 200
+                }
+            };
+            
+            // Créer le réseau
+            const data = { nodes: [], edges: [] };
+            network = new vis.Network(container, data, options);
+            
+            // Gérer les clics sur les nœuds
+            network.on('click', function(params) {
+                if (params.nodes.length > 0) {
+                    handleNodeClick(params.nodes[0]);
+                }
+            });
+        }
+
+        // ========================================
+        // AFFICHAGE DES SECTIONS
+        // ========================================
+        
+        function showSections() {
+            currentView = 'sections';
+            updateBreadcrumb();
+            
+            // Extraire les sections uniques des personnes
+            const sections = [...new Set(personnesData.map(p => p.Section))].filter(s => s);
+            
+            if (sections.length === 0) {
+                clearInfoPanel();
+                updateNetwork([], []);
+                return;
+            }
+            
+            // Créer les nœuds pour chaque section
+            const nodesArray = sections.map((section, index) => ({
+                id: 'section_' + section,
+                label: section,
+                color: {
+                    background: '#667eea',
+                    border: '#764ba2'
+                },
+                font: { color: 'white', size: 18 }
+            }));
+            
+            // Pas de liens entre les sections
+            const edgesArray = [];
+            
+            updateNetwork(nodesArray, edgesArray);
+            clearInfoPanel();
+        }
+
+        // ========================================
+        // AFFICHAGE DES PERSONNES D'UNE SECTION
+        // ========================================
+        
+        function showPersonsInSection(section) {
+            currentView = 'persons';
+            currentSection = section;
+            updateBreadcrumb();
+            
+            // Filtrer les personnes de cette section
+            const persons = personnesData.filter(p => p.Section === section);
+            
+            // Créer les nœuds pour chaque personne
+            const nodesArray = persons.map(person => ({
+                id: 'person_' + person.ID,
+                label: person.Nom,
+                title: person.Fonction, // Info-bulle au survol
+                color: {
+                    background: '#51cf66',
+                    border: '#37b24d'
+                },
+                font: { color: 'white' }
+            }));
+            
+            // Créer des liens basés sur les relations
+            const edgesArray = [];
+            persons.forEach(person => {
+                const personRelations = relationsData.filter(r => 
+                    (r.Personne1_ID == person.ID || r.Personne2_ID == person.ID) &&
+                    persons.find(p => p.ID == r.Personne1_ID || p.ID == r.Personne2_ID)
+                );
+                
+                personRelations.forEach(rel => {
+                    edgesArray.push({
+                        from: 'person_' + rel.Personne1_ID,
+                        to: 'person_' + rel.Personne2_ID,
+                        label: rel.Type,
+                        color: { color: '#868e96' }
+                    });
+                });
+            });
+            
+            updateNetwork(nodesArray, edgesArray);
+            clearInfoPanel();
+        }
+
+        // ========================================
+        // AFFICHAGE DES ARTICLES D'UNE PERSONNE
+        // ========================================
+        
+        function showArticlesOfPerson(personId) {
+            currentView = 'articles';
+            currentPerson = personnesData.find(p => p.ID == personId);
+            updateBreadcrumb();
+            
+            // Filtrer les articles de cette personne
+            const articles = articlesData.filter(a => a.Auteur_ID == personId);
+            
+            // Créer un nœud pour la personne au centre
+            const nodesArray = [{
+                id: 'person_' + personId,
+                label: currentPerson.Nom,
+                color: {
+                    background: '#51cf66',
+                    border: '#37b24d'
+                },
+                font: { color: 'white', size: 20 },
+                size: 35
+            }];
+            
+            // Créer les nœuds pour chaque article
+            articles.forEach(article => {
+                nodesArray.push({
+                    id: 'article_' + article.ID,
+                    label: article.Titre.substring(0, 30) + '...',
+                    title: article.Titre,
+                    color: {
+                        background: '#339af0',
+                        border: '#1971c2'
+                    },
+                    font: { color: 'white' }
+                });
+            });
+            
+            // Créer les liens entre la personne et ses articles
+            const edgesArray = articles.map(article => ({
+                from: 'person_' + personId,
+                to: 'article_' + article.ID,
+                color: { color: '#868e96' }
+            }));
+            
+            updateNetwork(nodesArray, edgesArray);
+            
+            // Afficher les infos de la personne
+            showPersonInfo(personId);
+        }
+
+        // ========================================
+        // MISE À JOUR DU RÉSEAU
+        // ========================================
+        
+        function updateNetwork(nodesArray, edgesArray) {
+            if (!network) return;
+            
+            // Mettre à jour les données du réseau
+            const data = {
+                nodes: new vis.DataSet(nodesArray),
+                edges: new vis.DataSet(edgesArray)
+            };
+            
+            network.setData(data);
+        }
+
+        // ========================================
+        // GESTION DES CLICS SUR LES NŒUDS
+        // ========================================
+        
+        function handleNodeClick(nodeId) {
+            console.log('Clic sur:', nodeId);
+            
+            // Griser tous les nœuds sauf celui cliqué
+            highlightNode(nodeId);
+            
+            if (nodeId.startsWith('section_')) {
+                // Clic sur une section → afficher les personnes
+                const section = nodeId.replace('section_', '');
+                showPersonsInSection(section);
+                
+            } else if (nodeId.startsWith('person_')) {
+                // Clic sur une personne
+                const personId = nodeId.replace('person_', '');
+                
+                if (currentView === 'persons') {
+                    // Si on est dans la vue des personnes → afficher les articles
+                    showArticlesOfPerson(personId);
+                } else {
+                    // Sinon juste afficher les infos
+                    showPersonInfo(personId);
+                }
+                
+            } else if (nodeId.startsWith('article_')) {
+                // Clic sur un article → afficher les infos
+                const articleId = nodeId.replace('article_', '');
+                showArticleInfo(articleId);
+            }
+        }
+
+        // ========================================
+        // MISE EN ÉVIDENCE D'UN NŒUD (GRISER LES AUTRES)
+        // ========================================
+        
+        function highlightNode(nodeId) {
+            if (!network) return;
+            
+            const allNodes = network.body.data.nodes.get();
+            const connectedNodes = network.getConnectedNodes(nodeId);
+            const connectedEdges = network.getConnectedEdges(nodeId);
+            
+            // Griser tous les nœuds
+            allNodes.forEach(node => {
+                if (node.id === nodeId) {
+                    // Le nœud cliqué reste normal
+                    network.body.data.nodes.update({
+                        id: node.id,
+                        opacity: 1
+                    });
+                } else if (connectedNodes.includes(node.id)) {
+                    // Les nœuds connectés sont légèrement grisés
+                    network.body.data.nodes.update({
+                        id: node.id,
+                        opacity: 0.6
+                    });
+                } else {
+                    // Les autres sont très grisés
+                    network.body.data.nodes.update({
+                        id: node.id,
+                        opacity: 0.2
+                    });
+                }
+            });
+            
+            // Gérer l'opacité des liens
+            const allEdges = network.body.data.edges.get();
+            allEdges.forEach(edge => {
+                if (connectedEdges.includes(edge.id)) {
+                    network.body.data.edges.update({
+                        id: edge.id,
+                        opacity: 1
+                    });
+                } else {
+                    network.body.data.edges.update({
+                        id: edge.id,
+                        opacity: 0.1
+                    });
+                }
+            });
+        }
+
+        // ========================================
+        // AFFICHAGE DES INFORMATIONS D'UNE PERSONNE
+        // ========================================
+        
+        function showPersonInfo(personId) {
+            const person = personnesData.find(p => p.ID == personId);
+            if (!person) return;
+            
+            // Trouver les relations de cette personne
+            const relations = relationsData.filter(r => 
+                r.Personne1_ID == personId || r.Personne2_ID == personId
+            );
+            
+            // Trouver les articles de cette personne
+            const articles = articlesData.filter(a => a.Auteur_ID == personId);
+            
+            let html = '<h2>' + person.Nom + '</h2>';
+            
+            // Photo si disponible
+            if (person.Photo_URL) {
+                html += '<img src="' + person.Photo_URL + '" class="person-photo" alt="' + person.Nom + '">';
+            }
+            
+            // Informations de base
+            html += '<div class="info-section">';
+            html += '<h3>Informations</h3>';
+            html += '<div class="info-item"><strong>Fonction:</strong> ' + (person.Fonction || 'N/A') + '</div>';
+            html += '<div class="info-item"><strong>Section:</strong> ' + (person.Section || 'N/A') + '</div>';
+            if (person.Bio) {
+                html += '<div class="info-item"><strong>Bio:</strong> ' + person.Bio + '</div>';
+            }
+            html += '</div>';
+            
+            // Relations
+            if (relations.length > 0) {
+                html += '<div class="info-section">';
+                html += '<h3>Relations (' + relations.length + ')</h3>';
+                relations.forEach(rel => {
+                    const otherId = rel.Personne1_ID == personId ? rel.Personne2_ID : rel.Personne1_ID;
+                    const otherPerson = personnesData.find(p => p.ID == otherId);
+                    
+                    html += '<div class="relation-item">';
+                    html += '<strong>' + (otherPerson ? otherPerson.Nom : 'Inconnu') + '</strong><br>';
+                    html += 'Type: ' + rel.Type + '<br>';
+                    if (rel.Description) {
+                        html += rel.Description + '<br>';
+                    }
+                    if (rel.Photo_URL) {
+                        html += '<img src="' + rel.Photo_URL + '" class="relation-photo" alt="Relation">';
+                    }
+                    html += '</div>';
+                });
+                html += '</div>';
+            }
+            
+            // Articles
+            if (articles.length > 0) {
+                html += '<div class="info-section">';
+                html += '<h3>Articles (' + articles.length + ')</h3>';
+                articles.forEach(article => {
+                    html += '<div class="article-item" onclick="showArticleInfo(' + article.ID + ')">';
+                    html += '<strong>' + article.Titre + '</strong><br>';
+                    if (article.Date) {
+                        html += '<small>' + article.Date + '</small>';
+                    }
+                    html += '</div>';
+                });
+                html += '</div>';
+            }
+            
+            document.querySelector('.info-panel').innerHTML = html;
+        }
+
+        // ========================================
+        // AFFICHAGE DES INFORMATIONS D'UN ARTICLE
+        // ========================================
+        
+        function showArticleInfo(articleId) {
+            const article = articlesData.find(a => a.ID == articleId);
+            if (!article) return;
+            
+            // Trouver les débunks de cet article
+            const debunks = debunksData.filter(d => d.Article_ID == articleId);
+            
+            // Trouver l'auteur
+            const author = personnesData.find(p => p.ID == article.Auteur_ID);
+            
+            let html = '<h2>📰 Article</h2>';
+            
+            html += '<div class="info-section">';
+            html += '<h3>' + article.Titre + '</h3>';
+            if (article.Date) {
+                html += '<div class="info-item"><strong>Date:</strong> ' + article.Date + '</div>';
+            }
+            if (author) {
+                html += '<div class="info-item"><strong>Auteur:</strong> ' + author.Nom + '</div>';
+            }
+            if (article.Description) {
+                html += '<div class="info-item">' + article.Description + '</div>';
+            }
+            if (article.URL) {
+                html += '<div class="info-item"><a href="' + article.URL + '" target="_blank">🔗 Lire l\'article</a></div>';
+            }
+            html += '</div>';
+            
+            // Débunks ou précisions
+            if (debunks.length > 0) {
+                html += '<div class="info-section">';
+                html += '<h3>⚠️ Débunks et précisions (' + debunks.length + ')</h3>';
+                debunks.forEach(debunk => {
+                    const debunkArticle = articlesData.find(a => a.ID == debunk.Article_Debunk_ID);
+                    if (debunkArticle) {
+                        html += '<div class="debunk-item">';
+                        html += '<strong>' + debunk.Type + '</strong><br>';
+                        html += debunkArticle.Titre + '<br>';
+                        if (debunkArticle.URL) {
+                            html += '<a href="' + debunkArticle.URL + '" target="_blank">🔗 Voir</a>';
+                        }
+                        html += '</div>';
+                    }
+                });
+                html += '</div>';
+            }
+            
+            document.querySelector('.info-panel').innerHTML = html;
+        }
+
+        // ========================================
+        // UTILITAIRES
+        // ========================================
+        
+        function clearInfoPanel() {
+            document.querySelector('.info-panel').innerHTML = `
+                <div class="empty-state">
+                    <div style="font-size: 4em;">👆</div>
+                    <p>Cli
