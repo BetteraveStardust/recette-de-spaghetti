@@ -267,7 +267,7 @@
     <div class="container">
         <div class="header">
             <h1>📊 Organigramme Dynamique</h1>
-            <p>Explorez les relations et connections de manière interactive</p>
+            <p>Explore les relations et connections de manière interactive 🤓</p>
         </div>
 
         <div class="upload-section">
@@ -294,7 +294,7 @@
             <div class="info-panel">
                 <div class="empty-state">
                     <div style="font-size: 4em;">👆</div>
-                    <p>Cliquez sur un élément pour voir ses informations</p>
+                    <p>Cliquez sur un élément pour voir ses informations ; utilise le menu pour revenir en arrière</p>
                 </div>
             </div>
         </div>
@@ -311,12 +311,12 @@
         let relationsData = [];
         let debunksData = [];
         
-        // Variables pour le réseau (graphe)
+        // Variables pour le réseau
         let network = null;
         let nodes = null;
         let edges = null;
         
-        // Navigation (pour savoir où on est dans l'arborescence)
+        // Navigation, pour savoir où on est dans l'arborescence
         let currentView = 'sections'; // 'sections', 'persons', 'articles'
         let currentSection = null;
         let currentPerson = null;
@@ -326,23 +326,23 @@
         // CHARGEMENT AUTOMATIQUE AU DÉMARRAGE
         // ========================================
         
-        // Cette fonction charge automatiquement le fichier data.xlsx
-        // IMPORTANT : Le fichier data.xlsx doit être dans le même dossier que index.html
+        // charge automatiquement le fichier data.xlsx
+        // !!! IMPORTANT : Le fichier data.xlsx doit être dans le même dossier que index.html attention !!!!
         async function loadDefaultData() {
             updateStatus('loading', 'Chargement des données...');
             
             try {
-                // Charger le fichier data.xlsx depuis le serveur
+                // Charger le fichier data.xlsx depuis le github
                 const response = await fetch('data.xlsx');
                 
                 if (!response.ok) {
                     throw new Error('Fichier data.xlsx introuvable. Assurez-vous qu\'il est dans le même dossier.');
                 }
                 
-                // Convertir la réponse en ArrayBuffer
+                // Convertir la réponse en ArrayBuffer askiparait
                 const arrayBuffer = await response.arrayBuffer();
                 
-                // Traiter le fichier Excel
+                // Traiter le fichier Excel 
                 processExcelData(arrayBuffer);
                 
                 updateStatus('success', '✓ Données chargées avec succès');
@@ -354,7 +354,7 @@
         }
 
         // ========================================
-        // MISE À JOUR DE L'INDICATEUR DE STATUT
+        // MàJ du statut en mode frais 
         // ========================================
         
         function updateStatus(type, message) {
@@ -369,7 +369,7 @@
         }
 
         // ========================================
-        // CHARGEMENT MANUEL D'UN FICHIER
+        // upload un autre fichier manuellement (pour test update)
         // ========================================
         
         document.getElementById('excelFile').addEventListener('change', function(e) {
@@ -395,7 +395,7 @@
         });
 
         // ========================================
-        // TRAITEMENT DES DONNÉES EXCEL
+        // Traitement de l'excel
         // ========================================
         
         function processExcelData(arrayBuffer) {
@@ -404,7 +404,7 @@
             const workbook = XLSX.read(data, {type: 'array'});
             
             // Extraire les données de chaque feuille
-            // La fonction XLSX.utils.sheet_to_json convertit une feuille Excel en tableau d'objets JavaScript
+            // La fonction XLSX.utils.sheet_to_json convertit une feuille Excel en tabler d'objets JavaScript, j'ai pas tout capté
             personnesData = XLSX.utils.sheet_to_json(workbook.Sheets['Personnes'] || workbook.Sheets[workbook.SheetNames[0]] || {});
             articlesData = XLSX.utils.sheet_to_json(workbook.Sheets['Articles'] || {});
             relationsData = XLSX.utils.sheet_to_json(workbook.Sheets['Relations'] || {});
@@ -423,7 +423,7 @@
         }
 
         // ========================================
-        // INITIALISATION DU RÉSEAU (GRAPHE)
+        // initialisation du réseau et des nodes
         // ========================================
         
         function initializeNetwork() {
@@ -469,7 +469,7 @@
             const data = { nodes: [], edges: [] };
             network = new vis.Network(container, data, options);
             
-            // Gérer les clics sur les nœuds
+            // Gérer les clics sur les nodes
             network.on('click', function(params) {
                 if (params.nodes.length > 0) {
                     handleNodeClick(params.nodes[0]);
@@ -478,14 +478,14 @@
         }
 
         // ========================================
-        // AFFICHAGE DES SECTIONS
+        // Affichage section 
         // ========================================
         
         function showSections() {
             currentView = 'sections';
             updateBreadcrumb();
             
-            // Extraire les sections uniques des personnes
+            // Extraire les sections uniques des personnes (plusieurs sections ?)
             const sections = [...new Set(personnesData.map(p => p.Section))].filter(s => s);
             
             if (sections.length === 0) {
@@ -494,7 +494,7 @@
                 return;
             }
             
-            // Créer les nœuds pour chaque section
+            // Créer les nodes pour chaque section (1 atm)
             const nodesArray = sections.map((section, index) => ({
                 id: 'section_' + section,
                 label: section,
@@ -528,12 +528,12 @@
             const nodesArray = persons.map(person => ({
                 id: 'person_' + person.ID,
                 label: person.Nom,
-                title: person.Fonction, // Info-bulle au survol
+                title: person.Fonction, // Info-bulle au survol en fraaaiiissss
                 color: {
                     background: '#51cf66',
                     border: '#37b24d'
                 },
-                font: { color: 'white' }
+                font: { color: 'black' }
             }));
             
             // Créer des liens basés sur les relations
@@ -626,17 +626,17 @@
         }
 
         // ========================================
-        // GESTION DES CLICS SUR LES NŒUDS
+        // Gestion des clics sur les nodes
         // ========================================
         
         function handleNodeClick(nodeId) {
             console.log('Clic sur:', nodeId);
             
-            // Griser tous les nœuds sauf celui cliqué
+            // Griser tous les nœuds sauf celui cliqué (pas certain que ça fonctionne)
             highlightNode(nodeId);
             
             if (nodeId.startsWith('section_')) {
-                // Clic sur une section → afficher les personnes
+                // Clic sur une section -> afficher les personnes
                 const section = nodeId.replace('section_', '');
                 showPersonsInSection(section);
                 
@@ -645,7 +645,7 @@
                 const personId = nodeId.replace('person_', '');
                 
                 if (currentView === 'persons') {
-                    // Si on est dans la vue des personnes → afficher les articles
+                    // Si on est dans la vue des personnes -> afficher les articles
                     showArticlesOfPerson(personId);
                 } else {
                     // Sinon juste afficher les infos
@@ -653,14 +653,14 @@
                 }
                 
             } else if (nodeId.startsWith('article_')) {
-                // Clic sur un article → afficher les infos
+                // Clic sur un article -> afficher les infos
                 const articleId = nodeId.replace('article_', '');
                 showArticleInfo(articleId);
             }
         }
 
         // ========================================
-        // MISE EN ÉVIDENCE D'UN NŒUD (GRISER LES AUTRES)
+        // Mise en évidence d'un node grise les autres (??)
         // ========================================
         
         function highlightNode(nodeId) {
@@ -670,22 +670,22 @@
             const connectedNodes = network.getConnectedNodes(nodeId);
             const connectedEdges = network.getConnectedEdges(nodeId);
             
-            // Griser tous les nœuds
+            // Griser tous les nodes
             allNodes.forEach(node => {
                 if (node.id === nodeId) {
-                    // Le nœud cliqué reste normal
+                    // Le node cliqué reste normal
                     network.body.data.nodes.update({
                         id: node.id,
                         opacity: 1
                     });
                 } else if (connectedNodes.includes(node.id)) {
-                    // Les nœuds connectés sont légèrement grisés
+                    // Les nodes connectés sont légèrement grisés
                     network.body.data.nodes.update({
                         id: node.id,
                         opacity: 0.6
                     });
                 } else {
-                    // Les autres sont très grisés
+                    // Les autres sont très grisés (???? zebiiii)
                     network.body.data.nodes.update({
                         id: node.id,
                         opacity: 0.2
@@ -693,7 +693,7 @@
                 }
             });
             
-            // Gérer l'opacité des liens
+            // Gérer l'opacité des liens (pas convaincu)
             const allEdges = network.body.data.edges.get();
             allEdges.forEach(edge => {
                 if (connectedEdges.includes(edge.id)) {
@@ -711,7 +711,7 @@
         }
 
         // ========================================
-        // AFFICHAGE DES INFORMATIONS D'UNE PERSONNE
+        // Affichage des infos d'une personne 
         // ========================================
         
         function showPersonInfo(personId) {
@@ -784,7 +784,7 @@
         }
 
         // ========================================
-        // AFFICHAGE DES INFORMATIONS D'UN ARTICLE
+        // Affichage des infos d'un article 
         // ========================================
         
         function showArticleInfo(articleId) {
